@@ -82,10 +82,6 @@ class Wuziqi:
         reward = self.cal_score()
         return next_state, reward
 
-    def forward(self, action):
-        row, col = action
-        next_state, reward = self.take_action(row, col, self.current_player)
-        return next_state, reward
 
 if __name__ == "__main__":
     wuziqi = Wuziqi(nrow=15, ncol=15)
