@@ -56,11 +56,10 @@ learning_rate = 1e-3
 num_episodes = 1000
 hidden_dim = 128
 gamma = 0.98
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
-    "cpu")
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-env_name = "CartPole-v1"
-env = gym.make(env_name, render_mode='human')
+env_name = "CartPole-v0"
+env = gym.make(env_name, render_mode='rgb_array')
 # env.seed(0)
 torch.manual_seed(0)
 state_dim = env.observation_space.shape[0]
@@ -82,7 +81,8 @@ for i in range(10):
             }
             state = env.reset()
             done = False
-            while not done:
+            maxStep=200
+            while (not done) and maxStep>0:
                 if len(state)==2: state=state[0]
                 action = agent.take_action(state)
                 next_state, reward, done, _, _ = env.step(action)
@@ -93,6 +93,7 @@ for i in range(10):
                 transition_dict['dones'].append(done)
                 state = next_state
                 episode_return += reward
+                maxStep -= 1
             return_list.append(episode_return)
             agent.update(transition_dict)
             if (i_episode + 1) % 10 == 0:
