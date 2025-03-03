@@ -19,6 +19,7 @@ class Qnet(torch.nn.Module):
         x = F.relu(self.fc1(x))
         return self.fc2(x)
 
+
 class VAnet(torch.nn.Module):
     ''' 只有一层隐藏层的A网络和V网络 '''
     def __init__(self, state_dim, hidden_dim, action_dim):
