@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import rl_utils
 
+
 class PolicyNet(torch.nn.Module):
     def __init__(self, state_dim, hidden_dim, action_dim):
         super(PolicyNet, self).__init__()
@@ -26,6 +27,7 @@ class ValueNet(torch.nn.Module):
         x = F.relu(self.fc1(x))
         return self.fc2(x)
 
+
 class ActorCritic:
     def __init__(self, state_dim, hidden_dim, action_dim, actor_lr, critic_lr,
                  gamma, device):
@@ -39,6 +41,8 @@ class ActorCritic:
                                                  lr=critic_lr)  # 价值网络优化器
         self.gamma = gamma
         self.device = device
+        self.actor_loss = []
+        self.critic_loss = []
 
     def take_action(self, state):
         state = torch.tensor([state], dtype=torch.float).to(self.device)
@@ -59,39 +63,38 @@ class ActorCritic:
         dones = torch.tensor(transition_dict['dones'],
                              dtype=torch.float).view(-1, 1).to(self.device)
 
-        # 时序差分目标
-        td_target = rewards + self.gamma * self.critic(next_states) * (1 -
-                                                                       dones)
-        td_delta = td_target - self.critic(states)  # 时序差分误差
+        # 目标(有实际奖励)
+        td_target = rewards + self.gamma * self.critic(next_states) * (1 -dones)
+        # 误差
+        td_delta = td_target - self.critic(states)
         log_probs = torch.log(self.actor(states).gather(1, actions))
 
+        # 策略损失: 优胜劣汰
         actor_loss = torch.mean(-log_probs * td_delta.detach())
-        # actor_loss瞎尝试v1->不收敛
-        # actor_loss = torch.mean(td_delta)
-        print(td_delta.detach())
+        self.actor_loss.append(actor_loss.item())
 
-        # 均方误差损失函数
+        # 价值损失: critic 闭环
         critic_loss = torch.mean(
             F.mse_loss(self.critic(states), td_target.detach()))
-        # critic_loss瞎尝试v1->不收敛
-        # critic_loss = torch.mean(td_delta)
+        self.critic_loss.append(critic_loss.item())
 
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
-        actor_loss.backward()  # 计算策略网络的梯度
+        actor_loss.backward()   # 计算策略网络的梯度
         critic_loss.backward()  # 计算价值网络的梯度
-        self.actor_optimizer.step()  # 更新策略网络的参数
+        self.actor_optimizer.step()   # 更新策略网络的参数
         self.critic_optimizer.step()  # 更新价值网络的参数
+
 
 actor_lr = 1e-3
 critic_lr = 1e-2
-num_episodes = 1000
+num_episodes = 2000
 hidden_dim = 128
 gamma = 0.98
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-env_name = 'CartPole-v0'
-env = gym.make(env_name)
+env_name = 'CartPole-v1'
+env = gym.make(env_name, render_mode='rgb_array')
 # env.seed(0)
 torch.manual_seed(0)
 state_dim = env.observation_space.shape[0]
@@ -103,15 +106,37 @@ return_list = rl_utils.train_on_policy_agent(env, agent, num_episodes, maxStep=2
 
 
 episodes_list = list(range(len(return_list)))
-plt.plot(episodes_list, return_list)
-plt.xlabel('Episodes')
-plt.ylabel('Returns')
-plt.title('Actor-Critic on {}'.format(env_name))
-plt.show()
+# plt.plot(episodes_list, return_list)
+# plt.xlabel('Episodes')
+# plt.ylabel('Returns')
+# plt.title('Actor-Critic on {}'.format(env_name))
+# plt.show()
 
 mv_return = rl_utils.moving_average(return_list, 9)
 plt.plot(episodes_list, mv_return)
 plt.xlabel('Episodes')
 plt.ylabel('Returns')
 plt.title('Actor-Critic on {}'.format(env_name))
+plt.show()
+
+mv_return_actor = rl_utils.moving_average(agent.actor_loss, 9)
+plt.plot(episodes_list, mv_return_actor)
+plt.xlabel('Episodes')
+plt.ylabel('actor_loss')
+plt.title('actor_loss on {}'.format(env_name))
+plt.show()
+
+mv_return_critic = rl_utils.moving_average(agent.critic_loss, 9)
+plt.plot(episodes_list, mv_return_critic)
+plt.xlabel('Episodes')
+plt.ylabel('critic_loss')
+plt.title('actor_loss on {}'.format(env_name))
+plt.show()
+
+plt.plot(episodes_list, mv_return_actor, marker='+', label='actor_loss')
+plt.plot(episodes_list, mv_return_critic, marker='*', label='critic_loss')
+plt.xlabel('Episodes')
+plt.ylabel('loss')
+plt.legend()
+plt.title('actor_loss on {}'.format(env_name))
 plt.show()
