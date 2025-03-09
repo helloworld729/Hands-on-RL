@@ -11,10 +11,14 @@ class PolicyNet(torch.nn.Module):
     def __init__(self, state_dim, hidden_dim, action_dim):
         super(PolicyNet, self).__init__()
         self.fc1 = torch.nn.Linear(state_dim, hidden_dim)
+        # self.fc2 = torch.nn.Linear(hidden_dim, hidden_dim)
+        # self.fc3 = torch.nn.Linear(hidden_dim, hidden_dim)
         self.fc2 = torch.nn.Linear(hidden_dim, action_dim)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
+        # x = F.relu(self.fc2(x))
+        # x = F.relu(self.fc3(x))
         return F.softmax(self.fc2(x), dim=1)
 
 
@@ -89,7 +93,7 @@ for i in range(10):
             }
             state = env.reset()
             done = False
-            maxStep=300
+            maxStep = 200
             while (not done) and maxStep>0:
                 if len(state)==2: state=state[0]
                 action = agent.take_action(state)
