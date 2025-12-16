@@ -11,7 +11,6 @@ class PolicyNet(torch.nn.Module):
         super(PolicyNet, self).__init__()
         self.fc1 = torch.nn.Linear(state_dim, hidden_dim)
         self.fc2 = torch.nn.Linear(hidden_dim, action_dim)
-
     def forward(self, x):
         x = F.relu(self.fc1(x))
         return F.softmax(self.fc2(x), dim=1)
@@ -25,8 +24,8 @@ class ValueNet(torch.nn.Module):
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
+        # 价值预估没有加激活函数
         return self.fc2(x)
-
 
 class ActorCritic:
     def __init__(self, state_dim, hidden_dim, action_dim, actor_lr, critic_lr,
@@ -106,17 +105,19 @@ return_list = rl_utils.train_on_policy_agent(env, agent, num_episodes, maxStep=2
 
 
 episodes_list = list(range(len(return_list)))
-# plt.plot(episodes_list, return_list)
-# plt.xlabel('Episodes')
-# plt.ylabel('Returns')
-# plt.title('Actor-Critic on {}'.format(env_name))
-# plt.show()
+plt.plot(episodes_list, return_list)
+plt.xlabel('Episodes')
+plt.ylabel('Returns')
+plt.title('Actor-Critic-Return-real on {}'.format(env_name))
+plt.savefig("img/实际收益.png", dpi=300)
+plt.show()
 
 mv_return = rl_utils.moving_average(return_list, 9)
 plt.plot(episodes_list, mv_return)
 plt.xlabel('Episodes')
 plt.ylabel('Returns')
-plt.title('Actor-Critic on {}'.format(env_name))
+plt.title('Actor-Critic-Return-MovingAvg on  {}'.format(env_name))
+plt.savefig("img/平滑收益.png", dpi=300)
 plt.show()
 
 mv_return_actor = rl_utils.moving_average(agent.actor_loss, 9)
@@ -124,19 +125,13 @@ plt.plot(episodes_list, mv_return_actor)
 plt.xlabel('Episodes')
 plt.ylabel('actor_loss')
 plt.title('actor_loss on {}'.format(env_name))
+plt.savefig("img/actor_loss.png", dpi=300)
 plt.show()
 
 mv_return_critic = rl_utils.moving_average(agent.critic_loss, 9)
 plt.plot(episodes_list, mv_return_critic)
 plt.xlabel('Episodes')
 plt.ylabel('critic_loss')
-plt.title('actor_loss on {}'.format(env_name))
-plt.show()
-
-plt.plot(episodes_list, mv_return_actor, marker='+', label='actor_loss')
-plt.plot(episodes_list, mv_return_critic, marker='*', label='critic_loss')
-plt.xlabel('Episodes')
-plt.ylabel('loss')
-plt.legend()
-plt.title('actor_loss on {}'.format(env_name))
+plt.title('critic_loss on {}'.format(env_name))
+plt.savefig("img/critic_loss.png", dpi=300)
 plt.show()

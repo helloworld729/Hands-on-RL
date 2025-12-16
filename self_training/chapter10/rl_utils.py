@@ -5,7 +5,6 @@ import collections
 import random
 
 class ReplayBuffer:
-    # todo
     def __init__(self, capacity):
         self.buffer = collections.deque(maxlen=capacity) 
 
